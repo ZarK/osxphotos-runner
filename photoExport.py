@@ -23,7 +23,7 @@ MOUNT_CMD = [
 ]
 
 # Variables
-OVERLAP_PERIOD = datetime.timedelta(days=120)  # 1 month overlap
+OVERLAP_PERIOD = datetime.timedelta(days=35)  # 1 month overlap
 TODAY = datetime.date.today()
 START_DATE = TODAY - OVERLAP_PERIOD
 
@@ -188,7 +188,13 @@ def export_photo_variant(photo, path, is_edited=False, is_live=False):
                     f"Duplicate created of {'edited ' if is_edited else ''}{'live ' if is_live else ''}photo to {path}")
 
             try:
-                set_file_timestamp(path, photo.date)
+                for _ in range(5):  # Try up to 5 times
+                    if os.path.exists(path):
+                        set_file_timestamp(path, photo.date)
+                        break
+                    time.sleep(1)  # Wait for 1 second before retrying
+                else:
+                    raise FileNotFoundError(f"{path} still does not exist after multiple checks.")
             except FileNotFoundError:
                 print(f"Failed to set timestamp for {path}. File might not have been written yet.")
                 failed_files.append({"path": path, "date": photo.date, "timestamp": photo.date.timestamp()})
